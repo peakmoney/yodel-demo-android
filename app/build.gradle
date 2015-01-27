@@ -18,7 +18,9 @@ android {
     }
     buildTypes {
         debug {
-            resValue "string", "gcm_sender_id", System.getenv('STENTOR_DEMO_SENDER_ID') ?: "no_id"
+            Properties properties = new Properties()
+            properties.load(project.rootProject.file('local.properties').newDataInputStream())
+            resValue "string", "gcm_sender_id", properties.getProperty("stendor_demo_sender_id", "")
         }
         release {
             minifyEnabled false

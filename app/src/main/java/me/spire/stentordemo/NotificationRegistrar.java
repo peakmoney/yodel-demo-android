@@ -8,23 +8,38 @@ import android.util.Log;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class GcmFacade {
+public class NotificationRegistrar {
 
-    public static final String EXTRA_MESSAGE = "message";
     public static final String PROPERTY_REG_ID = "registration_id";
+
+    public enum RegistrationAction {
+        REGISTER,
+        UNREGISTER
+    }
 
     private final static String TAG = "GcmFacade";
 
     private Context mContext;
     private String mSenderId;
     private GoogleCloudMessaging mGcm;
-    private AtomicInteger mMsgId = new AtomicInteger();
-    private SharedPreferences mPrefs;
     private String mRegId;
 
-    public GcmFacade(Context context) {
+    private OnRegistrationUpdateListener mRegistrationUpdateListener;
+
+    public static void register(Context context, OnRegistrationUpdateListener listener) {
+        NotificationRegistrar registrar = new NotificationRegistrar(context);
+        registrar.setOnRegistrationUpdateListener(listener);
+        registrar.register();
+    }
+
+    public static void unregister(Context context, OnRegistrationUpdateListener listener) {
+        NotificationRegistrar registrar = new NotificationRegistrar(context);
+        registrar.setOnRegistrationUpdateListener(listener);
+        registrar.unregister();
+    }
+
+    public NotificationRegistrar(Context context) {
         if (context == null) return; // should technically throw error
 
         mContext = context;
@@ -32,12 +47,22 @@ public class GcmFacade {
         mGcm = GoogleCloudMessaging.getInstance(mContext);
     }
 
-    public void ensureRegistration() {
+    public void setOnRegistrationUpdateListener(OnRegistrationUpdateListener listener) {
+        mRegistrationUpdateListener = listener;
+    }
+
+    public void register() {
+
         mRegId = getRegistrationId();
 
         if (mRegId == null || mRegId.isEmpty()) {
-            registerInBackground();
+            performRegistrationTask(RegistrationAction.REGISTER);
         }
+    }
+
+    public void unregister() {
+        mRegId = null;
+        performRegistrationTask(RegistrationAction.UNREGISTER);
     }
 
     private String getRegistrationId() {
@@ -67,17 +92,28 @@ public class GcmFacade {
 
     }
 
-    private void registerInBackground() {
+    private void unsubscribeToDemoServer() {
+
+    }
+
+    private void performRegistrationTask(final RegistrationAction action) {
         new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... params) {
                 String msg = "";
                 try {
 
-                    mRegId = mGcm.register(mSenderId);
-                    storeRegistrationId();
+                    if (action == RegistrationAction.REGISTER) {
+                        Log.i(TAG, "Sender ID: " + mSenderId);
+                        mRegId = mGcm.register(mSenderId);
+                        subscribeToDemoServer();
 
-                    subscribeToDemoServer();
+                    } else if (action == RegistrationAction.UNREGISTER) {
+                        mRegId = null;
+                        unsubscribeToDemoServer();
+                    }
+
+                    storeRegistrationId();
 
                 } catch (IOException ex) {
                     msg = "Error :" + ex.getMessage();
@@ -90,9 +126,18 @@ public class GcmFacade {
 
             @Override
             protected void onPostExecute(String msg) {
+                // Maybe do something with that message
+
+                if (mRegistrationUpdateListener != null) {
+                    mRegistrationUpdateListener.onRegistrationUpdate(action, msg);
+                }
             }
 
         }.execute(null, null, null);
+    }
+
+    public interface OnRegistrationUpdateListener {
+        public void onRegistrationUpdate(RegistrationAction action, String message);
     }
 
 }
