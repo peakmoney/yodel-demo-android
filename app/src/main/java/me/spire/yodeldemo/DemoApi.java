@@ -1,4 +1,4 @@
-package me.spire.stentordemo;
+package me.spire.yodeldemo;
 
 import retrofit.Callback;
 import retrofit.RestAdapter;

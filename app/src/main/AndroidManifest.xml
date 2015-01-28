@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="me.spire.stentordemo" >
+    package="me.spire.yodeldemo" >
 
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <permission android:name="me.spire.stentordemo.permission.C2D_MESSAGE"
+    <permission android:name="me.spire.yodeldemo.permission.C2D_MESSAGE"
         android:protectionLevel="signature" />
-    <uses-permission android:name="me.spire.stentordemo.permission.C2D_MESSAGE" />
+    <uses-permission android:name="me.spire.yodeldemo.permission.C2D_MESSAGE" />
     
     <application
         android:allowBackup="true"
@@ -17,7 +17,7 @@
         android:theme="@style/AppTheme" >
 
         <activity
-            android:name="me.spire.stentordemo.MainActivity"
+            android:name="me.spire.yodeldemo.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,15 +27,15 @@
         </activity>
 
         <receiver
-            android:name=".GcmBroadcastReceiver"
+            android:name="me.spire.yodeldemo.GcmBroadcastReceiver"
             android:permission="com.google.android.c2dm.permission.SEND">
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <category android:name="me.spire.stentordemo" />
+                <category android:name="me.spire.yodeldemo" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".GcmIntentService" />
+        <service android:name="me.spire.yodeldemo.GcmIntentService" />
 
     </application>
 

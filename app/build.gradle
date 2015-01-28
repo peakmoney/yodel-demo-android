@@ -5,7 +5,7 @@ android {
     buildToolsVersion "21.1.1"
 
     defaultConfig {
-        applicationId "me.spire.stentordemo"
+        applicationId "me.spire.yodeldemo"
         minSdkVersion 19
         targetSdkVersion 21
         versionCode 1
@@ -20,7 +20,7 @@ android {
         debug {
             Properties properties = new Properties()
             properties.load(project.rootProject.file('local.properties').newDataInputStream())
-            resValue "string", "gcm_sender_id", properties.getProperty("stentor_demo_sender_id", "")
+            resValue "string", "gcm_sender_id", properties.getProperty("yodel_demo_sender_id", "")
         }
         release {
             minifyEnabled false

@@ -1,4 +1,4 @@
-package me.spire.stentordemo;
+package me.spire.yodeldemo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -12,7 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import me.spire.stentordemo.NotificationRegistrar.*;
+import me.spire.yodeldemo.NotificationRegistrar.*;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
