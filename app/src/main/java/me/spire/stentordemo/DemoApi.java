@@ -51,11 +51,13 @@ public class DemoApi {
 
     public static class Message {
         private Integer user_id;
-        private String data;
+        private String message;
+        private String payload;
 
-        public Message(int userId, String data) {
+        public Message(int userId, String message, String payload) {
             this.user_id = userId;
-            this.data = data;
+            this.message = message;
+            this.payload = payload;
         }
     }
 

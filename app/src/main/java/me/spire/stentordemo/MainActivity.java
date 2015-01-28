@@ -90,9 +90,12 @@ public class MainActivity extends ActionBarActivity {
         mNotifyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String dataJson = "{\"message\": \"" + mNotificationMessageField.getText().toString() + "\"}";
 
-                new DemoApi().getService().notify(new DemoApi.Message(getUserId(), dataJson),
+                String message = mNotificationMessageField.getText().toString();
+
+                String dataJson = "{\"message\": \"" + message + "\"}";
+
+                new DemoApi().getService().notify(new DemoApi.Message(getUserId(), message, dataJson),
                         new Callback<DemoApi.StatusResponse>() {
 
                     @Override
