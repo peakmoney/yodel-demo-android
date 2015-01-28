@@ -12,7 +12,7 @@ public class DemoApi {
 
     public DemoApi() {
         mRestAdapter = new RestAdapter.Builder()
-                .setEndpoint("http://192.168.56.1:3000")
+                .setEndpoint("http://10.0.1.22:3000")
                 .build();
 
         mDemoService = mRestAdapter.create(DemoService.class);
