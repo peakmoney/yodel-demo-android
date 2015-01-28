@@ -49,7 +49,8 @@ public class GcmIntentService extends IntentService {
             } else if (GoogleCloudMessaging.MESSAGE_TYPE_MESSAGE.equals(messageType)) {
                 // If it's a regular GCM message, do some work.
 
-                sendNotification("Received: " + extras.toString());
+                String message = extras.getString("message");
+                if (message != null) sendNotification(message);
 
                 Log.i(TAG, "Received: " + extras.toString());
             }
@@ -71,7 +72,7 @@ public class GcmIntentService extends IntentService {
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(R.drawable.ic_launcher)
-                        .setContentTitle("GCM Notification")
+                        .setContentTitle("Demo Message")
                         .setStyle(new NotificationCompat.BigTextStyle()
                                 .bigText(msg))
                         .setContentText(msg);

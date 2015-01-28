@@ -18,7 +18,7 @@
         android:id="@+id/unregister_button"
         android:layout_width="150dp"
         android:layout_height="50dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="25dp"
         android:textSize="12sp"
         android:text="Unregister"/>
 
@@ -26,8 +26,30 @@
         android:id="@+id/notify_button"
         android:layout_width="150dp"
         android:layout_height="50dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="25dp"
         android:textSize="12sp"
         android:text="Notify Myself"/>
+
+    <EditText
+        android:id="@+id/user_id_field"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:inputType="number"
+        android:hint="user id (min: 1)"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:text="Editable when unregistered"/>
+
+    <EditText
+        android:id="@+id/notification_message_field"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:hint="notification message"
+        android:text="This is a notification message"/>
 
 </LinearLayout>
