@@ -12,10 +12,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import me.spire.yodeldemo.NotificationRegistrar.*;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
+import retrofit.converter.GsonConverter;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -50,21 +54,24 @@ public class MainActivity extends ActionBarActivity {
 
         mRegistrationUpdateListener = new OnRegistrationUpdateListener() {
             @Override
-            public void onRegistrationUpdate(RegistrationAction action, String message) {
+            public void onUpdate(RegistrationAction action, String registrationId) {
 
-                if (action == RegistrationAction.REGISTER && message.isEmpty()) {
+                if (action == RegistrationAction.REGISTER) {
                     Toast.makeText(CONTEXT, "Successfully registered!", Toast.LENGTH_SHORT).show();
                     storeUserId(mUserIdField.getText().toString(), CONTEXT);
 
-                } else if (action == RegistrationAction.UNREGISTER && message.isEmpty()) {
+                } else if (action == RegistrationAction.UNREGISTER) {
                     Toast.makeText(CONTEXT, "Successfully unregistered!", Toast.LENGTH_SHORT).show();
                     storeUserId("", CONTEXT);
 
-                } else if (!message.isEmpty()) {
-                    Toast.makeText(CONTEXT, "Error! " + action.toString() + " : " + message, Toast.LENGTH_SHORT).show();
                 }
 
                 renderUserIdField();
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Toast.makeText(CONTEXT, "Error!: " + errorMessage, Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -76,14 +83,14 @@ public class MainActivity extends ActionBarActivity {
                     return;
                 }
 
-                NotificationRegistrar.register(CONTEXT, getUserId(), mRegistrationUpdateListener);
+                NotificationRegistrar.register(CONTEXT, mRegistrationUpdateListener);
             }
         });
 
         mUnregisterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                NotificationRegistrar.unregister(CONTEXT, getUserId(), mRegistrationUpdateListener);
+                NotificationRegistrar.unregister(CONTEXT, mRegistrationUpdateListener);
             }
         });
 
@@ -135,6 +142,38 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void subscribeToDemoServer(String registrationId) {
+        new DemoApi().getService().subscribe(new DemoApi.Device(getUserId(), registrationId),
+                new Callback<DemoApi.StatusResponse>() {
+                    @Override
+                    public void success(DemoApi.StatusResponse statusResponse, Response response) {
+                        Toast.makeText(CONTEXT, "Subscription Successful", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Toast.makeText(CONTEXT, "Failed Subscription: " +
+                                (error != null ? error.getMessage() : "<no error>"), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void unsubscribeToDemoServer(String registrationId) {
+        new DemoApi().getService().unsubscribe(new DemoApi.Device(getUserId(), registrationId),
+                new Callback<DemoApi.StatusResponse>() {
+                    @Override
+                    public void success(DemoApi.StatusResponse statusResponse, Response response) {
+                        Toast.makeText(CONTEXT, "Unsubscription Successful", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Toast.makeText(CONTEXT, "Failed Unsubscription: " +
+                                (error != null ? error.getMessage() : "<no error>"), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private int getUserId() {

@@ -16,7 +16,9 @@ import retrofit.client.Response;
 
 public class NotificationRegistrar {
 
-    public static final String PROPERTY_REG_ID = "registration_id";
+    public static final String PROPERTY_REG_ID = "gcm_registration_id";
+    public static final int RETRY_COUNT = 2;
+    public static final int INITIAL_RETRY_DELAY_MS = 200;
 
     public enum RegistrationAction {
         REGISTER,
@@ -29,37 +31,31 @@ public class NotificationRegistrar {
     private String mSenderId;
     private GoogleCloudMessaging mGcm;
     private String mRegId;
-    private int mUserId;
 
     private OnRegistrationUpdateListener mRegistrationUpdateListener;
 
-    public static void register(Context context, int userId, OnRegistrationUpdateListener listener) {
-        NotificationRegistrar registrar = new NotificationRegistrar(context, userId);
+    public static void register(Context context, OnRegistrationUpdateListener listener) {
+        NotificationRegistrar registrar = new NotificationRegistrar(context);
         registrar.setOnRegistrationUpdateListener(listener);
         registrar.register();
     }
 
-    public static void unregister(Context context, int userId, OnRegistrationUpdateListener listener) {
-        NotificationRegistrar registrar = new NotificationRegistrar(context, userId);
+    public static void unregister(Context context, OnRegistrationUpdateListener listener) {
+        NotificationRegistrar registrar = new NotificationRegistrar(context);
         registrar.setOnRegistrationUpdateListener(listener);
         registrar.unregister();
     }
 
-    public NotificationRegistrar(Context context, int userId) {
+    public NotificationRegistrar(Context context) {
         if (context == null) return; // should technically throw error
 
         mContext = context;
         mSenderId = mContext.getResources().getString(R.string.gcm_sender_id);
         mGcm = GoogleCloudMessaging.getInstance(mContext);
-        mUserId = userId;
     }
 
     public void setOnRegistrationUpdateListener(OnRegistrationUpdateListener listener) {
         mRegistrationUpdateListener = listener;
-    }
-
-    public void setUserId(int userId) {
-        mUserId = userId;
     }
 
     public void register() {
@@ -75,7 +71,7 @@ public class NotificationRegistrar {
         performRegistrationTask(RegistrationAction.UNREGISTER);
     }
 
-    private static String getRegistrationId(Context context) {
+    private String getRegistrationId(Context context) {
         final SharedPreferences prefs = getGCMPreferences(context);
         String registrationId = prefs.getString(PROPERTY_REG_ID, "");
         if (registrationId.isEmpty()) {
@@ -86,84 +82,72 @@ public class NotificationRegistrar {
         return registrationId;
     }
 
-    private static void storeRegistrationId(String regId, Context context) {
+    private void storeRegistrationId(String regId, Context context) {
         final SharedPreferences prefs = getGCMPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_REG_ID, regId);
         editor.commit();
     }
 
-    private static SharedPreferences getGCMPreferences(Context context) {
+    private SharedPreferences getGCMPreferences(Context context) {
         return context.getSharedPreferences(context.getClass().getSimpleName(),
                 Context.MODE_PRIVATE);
-    }
-
-    private void subscribeToDemoServer() {
-        new DemoApi().getService().subscribe(new DemoApi.Device(mUserId, getRegistrationId(mContext)),
-                new Callback<DemoApi.StatusResponse>() {
-            @Override
-            public void success(DemoApi.StatusResponse statusResponse, Response response) {
-                Toast.makeText(mContext, "Subscription Successful", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void failure(RetrofitError error) {
-                Toast.makeText(mContext, "Failed Subscription: " +
-                        (error != null ? error.getMessage() : "<no error>"), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void unsubscribeToDemoServer() {
-        new DemoApi().getService().unsubscribe(new DemoApi.Device(mUserId, getRegistrationId(mContext)),
-                new Callback<DemoApi.StatusResponse>() {
-            @Override
-            public void success(DemoApi.StatusResponse statusResponse, Response response) {
-                Toast.makeText(mContext, "Unsubscription Successful", Toast.LENGTH_SHORT).show();
-                mRegId = "";
-                storeRegistrationId(mRegId, mContext);
-            }
-
-            @Override
-            public void failure(RetrofitError error) {
-                Toast.makeText(mContext, "Failed Unsubscription: " +
-                        (error != null ? error.getMessage() : "<no error>"), Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     private void performRegistrationTask(final RegistrationAction action) {
         new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... params) {
-                String msg = "";
-                try {
+                String errorMessage = "";
 
-                    if (action == RegistrationAction.REGISTER) {
-                        Log.i(TAG, "Sender ID: " + mSenderId);
-                        mRegId = mGcm.register(mSenderId);
-                        storeRegistrationId(mRegId, mContext);
-                        subscribeToDemoServer();
+                // Allow exponential backoff to be called <RETRY_COUNT> times
+                // before sending an error message
 
-                    } else if (action == RegistrationAction.UNREGISTER) {
-                        unsubscribeToDemoServer();
+                for (int attempt = 0; attempt <= RETRY_COUNT; attempt++) {
+
+                    if (attempt > 0) {
+                        // Start exponential backoff
+                        try {
+                            Thread.sleep(attempt * INITIAL_RETRY_DELAY_MS);
+                        } catch (InterruptedException e) {
+                            break;
+                        }
                     }
 
-                } catch (IOException ex) {
-                    msg = "Error :" + ex.getMessage();
-                    // If there is an error, don't just keep trying to register.
-                    // Require the user to click a button again, or perform
-                    // exponential back-off.
+                    try {
+
+                        if (action == RegistrationAction.REGISTER) {
+                            Log.i(TAG, "Sender ID: " + mSenderId);
+                            mRegId = mGcm.register(mSenderId);
+                            storeRegistrationId(mRegId, mContext);
+
+                        } else if (action == RegistrationAction.UNREGISTER) {
+                            mGcm.unregister();
+                            mRegId = null;
+                            storeRegistrationId(mRegId, mContext);
+                        }
+
+                        errorMessage = "";
+                        break;
+
+                    } catch (IOException ex) {
+                        errorMessage = "Error :" + ex.getMessage();
+                    }
                 }
-                return msg;
+
+                return errorMessage;
             }
 
             @Override
-            protected void onPostExecute(String msg) {
+            protected void onPostExecute(String errorMessage) {
                 // Maybe do something with that message
 
                 if (mRegistrationUpdateListener != null) {
-                    mRegistrationUpdateListener.onRegistrationUpdate(action, msg);
+                    if (errorMessage != null && errorMessage.length() > 0) {
+                        mRegistrationUpdateListener.onError(errorMessage);
+                    } else {
+                        mRegistrationUpdateListener.onUpdate(action, mRegId);
+                    }
                 }
             }
 
@@ -171,7 +155,8 @@ public class NotificationRegistrar {
     }
 
     public interface OnRegistrationUpdateListener {
-        public void onRegistrationUpdate(RegistrationAction action, String message);
+        public void onUpdate(RegistrationAction action, String registrationId);
+        public void onError(String errorMessage);
     }
 
 }
