@@ -17,6 +17,7 @@ import retrofit.client.Response;
 public class NotificationRegistrar {
 
     public static final String PROPERTY_REG_ID = "gcm_registration_id";
+    public static final String PROPERTY_NOTIFICATION_KEY = "gcm_notification_key";
     public static final int RETRY_COUNT = 2;
     public static final int INITIAL_RETRY_DELAY_MS = 200;
 
@@ -46,6 +47,47 @@ public class NotificationRegistrar {
         registrar.unregister();
     }
 
+    public static String getRegistrationId(Context context) {
+        final SharedPreferences prefs = getGCMPreferences(context);
+        String registrationId = prefs.getString(PROPERTY_REG_ID, "");
+        if (registrationId.isEmpty()) {
+            Log.i(TAG, "Registration not found.");
+            return "";
+        }
+
+        return registrationId;
+    }
+
+    public static void storeRegistrationId(String regId, Context context) {
+        final SharedPreferences prefs = getGCMPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(PROPERTY_REG_ID, regId);
+        editor.commit();
+    }
+
+    public static String getNotificationKey(Context context) {
+        final SharedPreferences prefs = getGCMPreferences(context);
+        String notificationKey = prefs.getString(PROPERTY_NOTIFICATION_KEY, "");
+        if (notificationKey.isEmpty()) {
+            Log.i(TAG, "Registration not found.");
+            return "";
+        }
+
+        return notificationKey;
+    }
+
+    public static void storeNotificationKey(String notificationKey, Context context) {
+        final SharedPreferences prefs = getGCMPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(PROPERTY_NOTIFICATION_KEY, notificationKey);
+        editor.commit();
+    }
+
+    private static SharedPreferences getGCMPreferences(Context context) {
+        return context.getSharedPreferences(context.getClass().getSimpleName(),
+                Context.MODE_PRIVATE);
+    }
+
     public NotificationRegistrar(Context context) {
         if (context == null) return; // should technically throw error
 
@@ -60,7 +102,8 @@ public class NotificationRegistrar {
 
     public void register() {
 
-        mRegId = getRegistrationId(mContext);
+        // COMMENTED OUT FOR SPECIFIC TESTING
+        mRegId = ""; //getRegistrationId(mContext);
 
         if (mRegId == null || mRegId.isEmpty()) {
             performRegistrationTask(RegistrationAction.REGISTER);
@@ -69,29 +112,6 @@ public class NotificationRegistrar {
 
     public void unregister() {
         performRegistrationTask(RegistrationAction.UNREGISTER);
-    }
-
-    private String getRegistrationId(Context context) {
-        final SharedPreferences prefs = getGCMPreferences(context);
-        String registrationId = prefs.getString(PROPERTY_REG_ID, "");
-        if (registrationId.isEmpty()) {
-            Log.i(TAG, "Registration not found.");
-            return "";
-        }
-
-        return registrationId;
-    }
-
-    private void storeRegistrationId(String regId, Context context) {
-        final SharedPreferences prefs = getGCMPreferences(context);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(PROPERTY_REG_ID, regId);
-        editor.commit();
-    }
-
-    private SharedPreferences getGCMPreferences(Context context) {
-        return context.getSharedPreferences(context.getClass().getSimpleName(),
-                Context.MODE_PRIVATE);
     }
 
     private void performRegistrationTask(final RegistrationAction action) {
@@ -122,9 +142,10 @@ public class NotificationRegistrar {
                             storeRegistrationId(mRegId, mContext);
 
                         } else if (action == RegistrationAction.UNREGISTER) {
-                            mGcm.unregister();
-                            mRegId = null;
-                            storeRegistrationId(mRegId, mContext);
+                            // COMMENTED OUT FOR SPECIFIC TESTING!!!!!!
+                            //mGcm.unregister();
+                            mRegId = getRegistrationId(mContext); // keep for return value
+                            //storeRegistrationId("", mContext);
                         }
 
                         errorMessage = "";

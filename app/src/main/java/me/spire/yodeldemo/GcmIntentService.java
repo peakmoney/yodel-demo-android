@@ -49,6 +49,19 @@ public class GcmIntentService extends IntentService {
                 // If it's a regular GCM message, do some work.
 
                 String message = extras.getString("message");
+                String command = extras.getString("user_command");
+                String notificationKey = extras.getString("gcm_notification_key");
+
+                if (notificationKey != null) {
+                    NotificationRegistrar.storeNotificationKey(notificationKey, getApplicationContext());
+                }
+
+                if (command != null) {
+                    if (command.equals("dismiss_all")) {
+                        getNotificationManager().cancelAll();
+                    }
+                }
+
                 if (message != null) sendNotification(message);
 
                 Log.i(TAG, "Received: " + extras.toString());
@@ -62,9 +75,6 @@ public class GcmIntentService extends IntentService {
     // This is just one simple example of what you might choose to do with
     // a GCM message.
     private void sendNotification(String msg) {
-        mNotificationManager = (NotificationManager)
-                this.getSystemService(Context.NOTIFICATION_SERVICE);
-
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
@@ -77,6 +87,15 @@ public class GcmIntentService extends IntentService {
                         .setContentText(msg);
 
         mBuilder.setContentIntent(contentIntent);
-        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+        getNotificationManager().notify(NOTIFICATION_ID, mBuilder.build());
+    }
+
+    private NotificationManager getNotificationManager() {
+        if (mNotificationManager == null) {
+            mNotificationManager = (NotificationManager)
+                    this.getSystemService(Context.NOTIFICATION_SERVICE);
+        }
+
+        return mNotificationManager;
     }
 }

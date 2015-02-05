@@ -12,14 +12,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.android.gms.gcm.GoogleCloudMessaging;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import me.spire.yodeldemo.NotificationRegistrar.*;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
-import retrofit.converter.GsonConverter;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -32,11 +33,13 @@ public class MainActivity extends ActionBarActivity {
     private Button mRegisterButton;
     private Button mUnregisterButton;
     private Button mNotifyButton;
+    private Button mUserNotifyButton;
 
     private EditText mUserIdField;
     private EditText mNotificationMessageField;
 
     private final int mDefaultUserId = 1;
+    private String mLastRegId;
 
     private NotificationRegistrar.OnRegistrationUpdateListener mRegistrationUpdateListener;
 
@@ -48,6 +51,7 @@ public class MainActivity extends ActionBarActivity {
         mRegisterButton = (Button) findViewById(R.id.register_button);
         mUnregisterButton = (Button) findViewById(R.id.unregister_button);
         mNotifyButton = (Button) findViewById(R.id.notify_button);
+        mUserNotifyButton = (Button) findViewById(R.id.user_notify_button);
 
         mUserIdField = (EditText) findViewById(R.id.user_id_field);
         mNotificationMessageField = (EditText) findViewById(R.id.notification_message_field);
@@ -59,14 +63,16 @@ public class MainActivity extends ActionBarActivity {
                 if (action == RegistrationAction.REGISTER) {
                     Toast.makeText(CONTEXT, "Successfully registered!", Toast.LENGTH_SHORT).show();
                     storeUserId(mUserIdField.getText().toString(), CONTEXT);
+                    subscribeToDemoServer(registrationId);
 
                 } else if (action == RegistrationAction.UNREGISTER) {
                     Toast.makeText(CONTEXT, "Successfully unregistered!", Toast.LENGTH_SHORT).show();
                     storeUserId("", CONTEXT);
-
+                    unsubscribeToDemoServer(registrationId);
                 }
 
-                renderUserIdField();
+                // COMMENTED OUT FOR SPECIFIC TESTING
+                //renderUserIdField();
             }
 
             @Override
@@ -100,9 +106,9 @@ public class MainActivity extends ActionBarActivity {
 
                 String message = mNotificationMessageField.getText().toString();
 
-                String dataJson = "{\"message\": \"" + message + "\"}";
+                DemoApi.NotificationPayload payload = new DemoApi.NotificationPayload(message);
 
-                new DemoApi().getService().notify(new DemoApi.Message(getUserId(), message, dataJson),
+                new DemoApi().getService().notify(new DemoApi.Notification(getUserId(), message, payload),
                         new Callback<DemoApi.StatusResponse>() {
 
                     @Override
@@ -119,7 +125,31 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
-        renderUserIdField();
+        mUserNotifyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String notificationKey = NotificationRegistrar.getNotificationKey(getApplicationContext());
+
+                if (notificationKey != null && notificationKey.length() > 0) {
+                    final GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(CONTEXT);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Bundle data = new Bundle();
+                                data.putString("user_command", "dismiss_all");
+                                gcm.send(notificationKey, "user_command", data);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                }
+            }
+        });
+
+        // COMMENTED OUT FOR SPECIFIC TESTING
+        // renderUserIdField();
     }
 
     @Override
@@ -166,6 +196,7 @@ public class MainActivity extends ActionBarActivity {
                     @Override
                     public void success(DemoApi.StatusResponse statusResponse, Response response) {
                         Toast.makeText(CONTEXT, "Unsubscription Successful", Toast.LENGTH_SHORT).show();
+                        storeUserId("", CONTEXT);
                     }
 
                     @Override

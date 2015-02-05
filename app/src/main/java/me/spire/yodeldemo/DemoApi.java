@@ -49,15 +49,26 @@ public class DemoApi {
         }
     }
 
-    public static class Message {
+    public static class Notification {
         private Integer user_id;
         private String message;
-        private String payload;
+        private NotificationPayload payload;
 
-        public Message(int userId, String message, String payload) {
+        public Notification(int userId, String message, NotificationPayload payload) {
             this.user_id = userId;
             this.message = message;
             this.payload = payload;
+        }
+    }
+
+    public static class NotificationPayload {
+        // This class is just here to force GSON to parse JSON correctly
+
+        private String message;
+
+        public NotificationPayload() {}
+        public NotificationPayload(String message) {
+            this.message = message;
         }
     }
 
@@ -77,7 +88,7 @@ public class DemoApi {
         public void unsubscribe(@Body Device device, Callback<StatusResponse> cb);
 
         @POST("/notify")
-        public void notify(@Body Message message, Callback<StatusResponse> cb);
+        public void notify(@Body Notification notification, Callback<StatusResponse> cb);
     }
 
 }
