@@ -92,6 +92,7 @@ public class NotificationRegistrar {
         if (context == null) return; // should technically throw error
 
         mContext = context;
+        // SENDER ID is stored in local.properties as yodel_demo_sender_id="<yoursenderid>"
         mSenderId = mContext.getResources().getString(R.string.gcm_sender_id);
         mGcm = GoogleCloudMessaging.getInstance(mContext);
     }
@@ -142,10 +143,9 @@ public class NotificationRegistrar {
                             storeRegistrationId(mRegId, mContext);
 
                         } else if (action == RegistrationAction.UNREGISTER) {
-                            // COMMENTED OUT FOR SPECIFIC TESTING!!!!!!
-                            //mGcm.unregister();
+                            mGcm.unregister();
                             mRegId = getRegistrationId(mContext); // keep for return value
-                            //storeRegistrationId("", mContext);
+                            storeRegistrationId("", mContext);
                         }
 
                         errorMessage = "";

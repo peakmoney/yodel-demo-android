@@ -71,8 +71,7 @@ public class MainActivity extends ActionBarActivity {
                     unsubscribeToDemoServer(registrationId);
                 }
 
-                // COMMENTED OUT FOR SPECIFIC TESTING
-                //renderUserIdField();
+                renderUserIdField();
             }
 
             @Override
@@ -148,8 +147,7 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
-        // COMMENTED OUT FOR SPECIFIC TESTING
-        // renderUserIdField();
+        renderUserIdField();
     }
 
     @Override
