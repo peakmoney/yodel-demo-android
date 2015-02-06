@@ -1,5 +1,6 @@
 package me.spire.yodeldemo;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
@@ -138,6 +139,7 @@ public class MainActivity extends ActionBarActivity {
                                 Bundle data = new Bundle();
                                 data.putString("user_command", "dismiss_all");
                                 gcm.send(notificationKey, "user_command", data);
+                                ((NotificationManager) CONTEXT.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
